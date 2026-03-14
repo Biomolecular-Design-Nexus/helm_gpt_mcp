@@ -44,13 +44,14 @@ WORKDIR /app
 COPY --chmod=755 src/ src/
 COPY --chmod=755 configs/ configs/
 COPY --chmod=755 scripts/ scripts/
-COPY --chmod=755 examples/data/models/regression_rf.pkl examples/data/models/regression_rf.pkl
-COPY --chmod=755 examples/data/models/kras_xgboost_reg.pkl examples/data/models/kras_xgboost_reg.pkl
-COPY --chmod=755 examples/data/sequences/ examples/data/sequences/
 
-# Create writable directories for jobs/results and model mount point
-RUN mkdir -p /app/jobs /app/results /app/models/helmgpt && \
-    chmod 777 /app /app/jobs /app/results /app/models/helmgpt
+# Create writable directories for jobs/results and mount points
+# - /app/models/helmgpt: mount HELM-GPT prior model weights ($MACROMNEX_CACHE/model/helmgpt)
+# - /app/examples/data: mount scoring models and sequences if needed
+RUN mkdir -p /app/jobs /app/results /app/models/helmgpt \
+             /app/examples/data/models /app/examples/data/sequences && \
+    chmod 777 /app /app/jobs /app/results /app/models/helmgpt \
+              /app/examples/data/models /app/examples/data/sequences
 
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1

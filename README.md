@@ -20,15 +20,16 @@ The fastest way to get started. A pre-built Docker image is automatically publis
 docker pull ghcr.io/macromnex/helm_gpt_mcp:latest
 
 # Register with Claude Code (runs as current user to avoid permission issues)
-claude mcp add cycpep-tools -- docker run -i --rm --user `id -u`:`id -g` --gpus all --ipc=host -v `pwd`:`pwd` -v $MACROMNEX_CACHE/model/helmgpt:/app/models/helmgpt:ro ghcr.io/macromnex/helm_gpt_mcp:latest
+claude mcp add cycpep-tools -- docker run -i --rm --user `id -u`:`id -g` --gpus all --ipc=host -v `pwd`:`pwd` -v $MACROMNEX_CACHE/model/helmgpt:/app/models/helmgpt:ro -v $MACROMNEX_CACHE/data/helmgpt_data:/app/examples/data ghcr.io/macromnex/helm_gpt_mcp:latest
 ```
 
-**Note:** Run from your project directory. `` `pwd` `` expands to the current working directory. `$MACROMNEX_CACHE` should point to your model cache directory containing the HELM-GPT prior model weights.
+**Note:** Run from your project directory. `` `pwd` `` expands to the current working directory. `$MACROMNEX_CACHE` should point to your cache directory.
 
 **Requirements:**
 - Docker with GPU support (`nvidia-docker` or Docker with NVIDIA runtime)
 - Claude Code installed
 - HELM-GPT model weights in `$MACROMNEX_CACHE/model/helmgpt/` (for optimization tasks)
+- Scoring models and sequences in `$MACROMNEX_CACHE/data/helmgpt_data/` (models/*.pkl, sequences/*.csv)
 
 That's it! The HELM-GPT MCP server is now available in Claude Code.
 
@@ -47,7 +48,7 @@ cd helm_gpt_mcp
 docker build -t helm_gpt_mcp:latest .
 
 # Register with Claude Code (runs as current user to avoid permission issues)
-claude mcp add cycpep-tools -- docker run -i --rm --user `id -u`:`id -g` --gpus all --ipc=host -v `pwd`:`pwd` -v $MACROMNEX_CACHE/model/helmgpt:/app/models/helmgpt:ro helm_gpt_mcp:latest
+claude mcp add cycpep-tools -- docker run -i --rm --user `id -u`:`id -g` --gpus all --ipc=host -v `pwd`:`pwd` -v $MACROMNEX_CACHE/model/helmgpt:/app/models/helmgpt:ro -v $MACROMNEX_CACHE/data/helmgpt_data:/app/examples/data helm_gpt_mcp:latest
 ```
 
 **Note:** Run from your project directory. `` `pwd` `` expands to the current working directory.
@@ -65,6 +66,7 @@ claude mcp add cycpep-tools -- docker run -i --rm --user `id -u`:`id -g` --gpus 
 - `--ipc=host` — Uses host IPC namespace for better performance
 - `-v `pwd`:`pwd`` — Mounts your project directory so the container can access your data
 - `-v $MACROMNEX_CACHE/model/helmgpt:/app/models/helmgpt:ro` — Mounts HELM-GPT prior model weights (read-only)
+- `-v $MACROMNEX_CACHE/data/helmgpt_data:/app/examples/data` — Mounts scoring models (pkl) and sequence datasets (csv)
 
 ---
 
