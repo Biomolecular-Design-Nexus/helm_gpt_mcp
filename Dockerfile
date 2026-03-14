@@ -1,4 +1,4 @@
-FROM pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime AS builder
+FROM condaforge/miniforge3:latest
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -6,10 +6,10 @@ WORKDIR /app
 
 # System dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git wget && \
+    git wget libgomp1 && \
     rm -rf /var/lib/apt/lists/*
 
-# Install RDKit via conda
+# Install RDKit via conda (the only dep that needs conda)
 RUN conda install -y -c conda-forge rdkit && conda clean -afy
 
 # Core Python dependencies
@@ -24,21 +24,6 @@ RUN mkdir -p repo && \
       git clone --depth 1 https://github.com/charlesxu90/helm-gpt.git repo/helm-gpt && break; \
       if [ $attempt -lt 3 ]; then sleep 5; fi; \
     done
-
-# ---------- Runtime ----------
-FROM pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime AS runtime
-
-ENV DEBIAN_FRONTEND=noninteractive
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libgomp1 && \
-    rm -rf /var/lib/apt/lists/*
-
-# Copy conda environment (includes RDKit and all pip packages)
-COPY --from=builder /opt/conda /opt/conda
-COPY --from=builder /app/repo /app/repo
-
-WORKDIR /app
 
 # Copy MCP server source
 COPY --chmod=755 src/ src/
@@ -56,6 +41,5 @@ RUN mkdir -p /app/jobs /app/results /app/models/helmgpt \
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 
-ENV NVIDIA_CUDA_END_OF_LIFE=0
 ENTRYPOINT []
 CMD ["python", "src/server.py"]
