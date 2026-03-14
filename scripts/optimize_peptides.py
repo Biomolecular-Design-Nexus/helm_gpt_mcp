@@ -426,8 +426,17 @@ def check_optimization_requirements() -> Dict[str, Any]:
     except ImportError:
         requirements["torch_version"] = "Not installed"
 
-    # Check for prior models
-    prior_models = list(repo_path.glob("result/prior/*.pt")) if repo_path.exists() else []
+    # Check for prior models (repo dir, cache mount, examples/data/models/prior/)
+    prior_models = []
+    cache_dir = mcp_root / "models" / "helmgpt"
+    prior_dir = models_dir / "prior"
+    for search_dir, pattern in [
+        (repo_path, "result/prior/*.pt"),
+        (cache_dir, "*.pt"),
+        (prior_dir, "*.pt"),
+    ]:
+        if search_dir.exists():
+            prior_models.extend(search_dir.glob(pattern))
     requirements["available_prior_models"] = [str(p) for p in prior_models]
 
     return requirements

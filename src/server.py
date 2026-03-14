@@ -14,8 +14,12 @@ SCRIPT_DIR = Path(__file__).parent.resolve()
 MCP_ROOT = SCRIPT_DIR.parent
 SCRIPTS_DIR = MCP_ROOT / "scripts"
 CONFIGS_DIR = MCP_ROOT / "configs"
+# Mounted model cache directory (e.g. helmgpt prior models)
+MODELS_CACHE_DIR = MCP_ROOT / "models" / "helmgpt"
 # Python 3.7 environment for HELM-GPT repo scripts (optimization, etc.)
-PY37_PATH = str(MCP_ROOT / "env_py3.7" / "bin" / "python")
+# In Docker, env_py3.7 doesn't exist; fall back to current interpreter
+_py37_candidate = MCP_ROOT / "env_py3.7" / "bin" / "python"
+PY37_PATH = str(_py37_candidate) if _py37_candidate.exists() else sys.executable
 sys.path.insert(0, str(SCRIPT_DIR))
 sys.path.insert(0, str(SCRIPTS_DIR))
 
@@ -1078,17 +1082,24 @@ def get_model_info() -> dict:
     }
 
     # Check for prior models (needed for optimization)
-    if repo_dir.exists():
-        prior_models = list(repo_dir.glob("**/*.pt"))
-        for pm in prior_models[:10]:  # Limit to first 10
-            try:
-                model_info["prior_models"].append({
-                    "path": str(pm),
-                    "name": pm.name,
-                    "size_mb": round(pm.stat().st_size / (1024*1024), 2)
-                })
-            except Exception:
-                pass
+    # Search in: mounted cache dir, repo dir, and examples/data/models/prior/
+    prior_search_dirs = [
+        MODELS_CACHE_DIR,
+        models_dir / "prior",
+        repo_dir,
+    ]
+    for search_dir in prior_search_dirs:
+        if search_dir.exists():
+            prior_models_found = list(search_dir.glob("**/*.pt"))
+            for pm in prior_models_found[:10]:
+                try:
+                    model_info["prior_models"].append({
+                        "path": str(pm),
+                        "name": pm.name,
+                        "size_mb": round(pm.stat().st_size / (1024*1024), 2)
+                    })
+                except Exception:
+                    pass
 
     model_info["optimization_note"] = (
         "To run optimization (submit_optimize_peptides), you need a prior model (.pt file). "
